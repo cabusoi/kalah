@@ -38,6 +38,62 @@ public class KalahApplicationTests {
 	}
 	
 	@Test
+	public void testOpposingKalah(){
+		Game game =new Game();
+		
+		assertThat(game.phase, is(GamePhase.SOUTH_MOVES));
+		assertThat(gameController.isOpposingKalah(game, 7), is(false));
+		assertThat(gameController.isOpposingKalah(game, 8), is(false));
+		assertThat(gameController.isOpposingKalah(game, 14), is(true));
+		
+		game.phase=GamePhase.NORTH_MOVES;
+		assertThat(gameController.isOpposingKalah(game, 7), is(true));
+		assertThat(gameController.isOpposingKalah(game, 8), is(false));
+		assertThat(gameController.isOpposingKalah(game, 14), is(false));
+	}
+	
+	@Test
+	public void testOwnPit(){
+		Game game =new Game();
+		
+		assertThat(game.phase, is(GamePhase.SOUTH_MOVES));
+		assertThat(gameController.isOwnPit( game, 0), is(false));
+		assertThat(gameController.isOwnPit( game, 1), is(true));
+		assertThat(gameController.isOwnPit( game, 2), is(true));
+		assertThat(gameController.isOwnPit( game, 3), is(true));
+		assertThat(gameController.isOwnPit( game, 4), is(true));
+		assertThat(gameController.isOwnPit( game, 5), is(true));
+		assertThat(gameController.isOwnPit( game, 6), is(true));
+		assertThat(gameController.isOwnPit( game, 7), is(false));
+		assertThat(gameController.isOwnPit( game, 8), is(false));
+		assertThat(gameController.isOwnPit( game, 9), is(false));
+		assertThat(gameController.isOwnPit( game, 10), is(false));
+		assertThat(gameController.isOwnPit( game, 11), is(false));
+		assertThat(gameController.isOwnPit( game, 12), is(false));
+		assertThat(gameController.isOwnPit( game, 13), is(false));
+		assertThat(gameController.isOwnPit( game, 14), is(false));
+		assertThat(gameController.isOwnPit( game, 15), is(false));
+
+		game.phase=GamePhase.NORTH_MOVES;
+		assertThat(gameController.isOwnPit( game, 0), is(false));
+		assertThat(gameController.isOwnPit( game, 1), is(false));
+		assertThat(gameController.isOwnPit( game, 2), is(false));
+		assertThat(gameController.isOwnPit( game, 3), is(false));
+		assertThat(gameController.isOwnPit( game, 4), is(false));
+		assertThat(gameController.isOwnPit( game, 5), is(false));
+		assertThat(gameController.isOwnPit( game, 6), is(false));
+		assertThat(gameController.isOwnPit( game, 7), is(false));
+		assertThat(gameController.isOwnPit( game, 8), is(true));
+		assertThat(gameController.isOwnPit( game, 9), is(true));
+		assertThat(gameController.isOwnPit( game, 10), is(true));
+		assertThat(gameController.isOwnPit( game, 11), is(true));
+		assertThat(gameController.isOwnPit( game, 12), is(true));
+		assertThat(gameController.isOwnPit( game, 13), is(true));
+		assertThat(gameController.isOwnPit( game, 14), is(false));
+		assertThat(gameController.isOwnPit( game, 15), is(false));
+	}
+	
+	@Test
 	public void testConverter(){
 		Game game =new Game();
 		System.out.println(game.status);
