@@ -3,10 +3,8 @@ package com.backbase.challenge.kalah;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -22,7 +20,6 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
@@ -225,6 +222,7 @@ public class KalahApplicationTests {
 		//do some random moves
 		for (int i=0;i<500;i++){
 			try {
+				System.out.print("Extra move "+i+" ");
 				 this.mvc.perform( put("/games/1/pits/"+i%15).accept(MediaType.APPLICATION_JSON_UTF8).contentType(MediaType.APPLICATION_JSON));
 			} catch (Exception e) {
 				e.printStackTrace();

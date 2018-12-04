@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.SortedMap;
 import java.util.TreeMap;
+import java.util.stream.IntStream;
 
 import javax.persistence.AttributeConverter;
 import javax.persistence.Convert;
@@ -17,6 +18,7 @@ import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.servlet.http.HttpServletRequest;
+import javax.transaction.Transactional;
 import javax.validation.constraints.Max;
 import javax.validation.constraints.Min;
 
@@ -76,6 +78,7 @@ class KalahController {
 		return httpResponse(result, HttpStatus.CREATED);
 	}
 
+	@Transactional
 	@PutMapping(consumes = { "application/json" }, path = { "games/{gameId}/pits/{pit}" })
 	public HttpEntity<Object> move(HttpServletRequest request, 
 			@PathVariable("gameId") @NonNull long gameId,
@@ -150,6 +153,20 @@ class KalahController {
 				game.phase=GamePhase.NORTH_MOVES;
 			}else if(game.phase==GamePhase.NORTH_MOVES){
 				game.phase=GamePhase.SOUTH_MOVES;
+			}
+	
+			if (0 == IntStream.rangeClosed(1, 6).map(p->getPitCount(game, p)).sum() //REQ 4) check if game ended 
+				|| 0 == IntStream.rangeClosed(8, 13).map(p->getPitCount(game, p)).sum()){
+				final int southKalahCount=getPitCount(game, 7);
+				final int northKalahCount=getPitCount(game, 14);
+				
+				if(southKalahCount > northKalahCount){
+					game.phase=GamePhase.SOUTH_HAS_WON;
+				}else if(northKalahCount > southKalahCount){
+					game.phase=GamePhase.NORTH_HAS_WON;
+				}else{
+					game.phase=GamePhase.DRAW;
+				}
 			}
 		}
 	}
@@ -237,11 +254,13 @@ interface GameRepository extends JpaRepository<Game, Long> {
 enum GamePhase {
 	SOUTH_MOVES("pits 1..6"),
 	NORTH_MOVES("pits 8..13"),
-	ENDED("all pits empty for one of players");
+	SOUTH_HAS_WON("more stones in kalah 7"),
+	NORTH_HAS_WON("more stones in kalah 14"),
+	DRAW("equal number of stones distributed in each of kalah 7 and kalah 14");
 	
 	private String state;
 
-	private GamePhase(String state){
+	GamePhase(String state){
 		this.state=state;
 	}
 }
