@@ -1,5 +1,6 @@
 package com.backbase.challenge.kalah;
 
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertFalse;
@@ -7,6 +8,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -20,8 +22,12 @@ import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.MvcResult;
+import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
 @RunWith(SpringRunner.class)
 //@SpringBootTest
@@ -30,6 +36,7 @@ import org.springframework.test.web.servlet.MockMvc;
 //			classes = KalahApplication.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
 @AutoConfigureMockMvc
+@EnableWebMvc
 public class KalahApplicationTests {
 
 	public GameStatusConverter converter(){
@@ -117,30 +124,6 @@ public class KalahApplicationTests {
 		assertThat(game.status,equalTo(convertToEntityAttribute));
 	}
 	
-	@Test 
-	public void testAllowDropStoneInPit(){
-		Game game =new Game();
-		assertThat(game.phase,is(GamePhase.SOUTH_MOVES));
-		assertTrue(gameController.allowDropStoneInPit(game.phase, 6));
-		assertTrue(gameController.allowDropStoneInPit(game.phase, 7));
-		assertTrue(gameController.allowDropStoneInPit(game.phase, 8));
-		assertFalse(gameController.allowDropStoneInPit(game.phase, 14));
-
-		game.phase=GamePhase.NORTH_MOVES;
-		assertThat(game.phase,is(GamePhase.NORTH_MOVES));
-		assertTrue(gameController.allowDropStoneInPit(game.phase, 6));
-		assertFalse(gameController.allowDropStoneInPit(game.phase, 7));
-		assertTrue(gameController.allowDropStoneInPit(game.phase, 8));
-		assertTrue(gameController.allowDropStoneInPit(game.phase, 14));
-		
-		try{
-			gameController.allowDropStoneInPit(game.phase, 16);
-			fail("incorrect pit");
-		}catch(RuntimeException ex){
-			
-		}
-	}
-
 	@Test
 	public void testOposites(){
 		assertThat(1, is(gameController.oppositePit(13)));
@@ -171,13 +154,74 @@ public class KalahApplicationTests {
 	@Test
 	public void testMoveAndPassControl() throws Exception {
 
-		//test POST to inexistent game expect 2
-		this.mvc.perform(post("/games")).andExpect(status().is(200))
-				.andExpect(content().string("{\"id\":1,\"url\":\"http://localhost:8081/games/1\"}"));
+		//test GET to inexistent game expect 404
+		System.out.println("\n"+"get /games/-1");
+		this.mvc.perform( get("/games/-1").accept(MediaType.APPLICATION_JSON_UTF8).contentType(MediaType.APPLICATION_JSON))
+				.andExpect(status().isNotFound())
+				.andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8));
 		
 		//test PUT to inexistent game expect 404
-		this.mvc.perform(put("/games")).andExpect(status().is(404));
+		System.out.println("\n"+"put /games/-1/pits/-1");
+		this.mvc.perform( put("/games/-1/pits/-1").accept(MediaType.APPLICATION_JSON_UTF8).contentType(MediaType.APPLICATION_JSON))
+				.andExpect(status().isNotFound())
+				.andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8));
 		
+		//test POST to inexistent game expect 201
+		System.out.println("\n"+"post /games");
+		this.mvc.perform(post("/games").accept(MediaType.APPLICATION_JSON_UTF8).contentType(MediaType.APPLICATION_JSON))
+				.andExpect(status().isCreated())
+				.andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
+				.andExpect(content().string("{\"id\":1,\"url\":\"http://localhost:80/games/1\"}"));
 		
+		//test PUT to have SOUTH_MOVES their pit number 1 expect 200
+		System.out.println("\n"+"put /games/1/pits/1");
+		MvcResult result = this.mvc.perform( put("/games/1/pits/1").accept(MediaType.APPLICATION_JSON_UTF8).contentType(MediaType.APPLICATION_JSON))
+				.andExpect(status().isOk())
+				.andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
+				.andExpect(content().json("{'id':1,'url':'http://localhost:80/games/1','status':{'1':'0','2':'7','3':'7','4':'7','5':'7','6':'7','7':'1','8':'6','9':'6','10':'6','11':'6','12':'6','13':'6','14':'0'}}"))
+	            .andReturn();
+		
+		//test GET game 1 expect 200 and expect SOUTH_MOVES as result of REQ 2) after the move above
+		System.out.println("\n"+"get /games/1");
+		this.mvc.perform( get("/games/1").accept(MediaType.APPLICATION_JSON_UTF8).contentType(MediaType.APPLICATION_JSON))
+				.andExpect(status().isOk())
+				.andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
+				.andExpect(content().string( containsString("SOUTH_MOVES")));
+
+		//test PUT to have SOUTH_MOVES again , this time their pit number 2 expect 200
+		System.out.println("\n"+"put /games/1/pits/2");
+		result = this.mvc.perform( put("/games/1/pits/2").accept(MediaType.APPLICATION_JSON_UTF8).contentType(MediaType.APPLICATION_JSON))
+				.andExpect(status().isOk())
+				.andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
+				.andExpect(content().json("{'id':1,'url':'http://localhost:80/games/1','status':{'1':'0','2':'0','3':'8','4':'8','5':'8','6':'8','7':'2','8':'7','9':'7','10':'6','11':'6','12':'6','13':'6','14':'0'}}"))
+	            .andReturn();
+				
+		//test GET game 1 expect 200 and expect NORTH_MOVES 
+		System.out.println("\n"+"get /games/1");
+		this.mvc.perform( get("/games/1").accept(MediaType.APPLICATION_JSON_UTF8).contentType(MediaType.APPLICATION_JSON))
+				.andExpect(content().string( containsString("NORTH_MOVES")));
+
+		//test PUT to have NORTH_MOVES, their pit number 8 expect 200
+		System.out.println("\n"+"put /games/1/pits/8");
+		result = this.mvc.perform( put("/games/1/pits/8").accept(MediaType.APPLICATION_JSON_UTF8).contentType(MediaType.APPLICATION_JSON))
+				.andExpect(status().isOk())
+				.andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
+				.andExpect(content().json("{'id':1,'url':'http://localhost:80/games/1','status':{'1':'1','2':'0','3':'8','4':'8','5':'8','6':'8','7':'2','9':'8','9':'8','10':'7','11':'7','12':'7','13':'7','14':'1'}}"))
+	            .andReturn();
+		
+		//test GET game 1 expect 200 and expect SOUTH_MOVES 
+		System.out.println("\n"+"get /games/1");
+		this.mvc.perform( get("/games/1").accept(MediaType.APPLICATION_JSON_UTF8).contentType(MediaType.APPLICATION_JSON))
+				.andExpect(content().string( containsString("SOUTH_MOVES")));
+
+		//test PUT to have SOUTH_MOVES, their pit number 6 and verify REQ 3) expect 200
+		System.out.println("\n"+"put /games/1/pits/6");
+		result = this.mvc.perform( put("/games/1/pits/6").accept(MediaType.APPLICATION_JSON_UTF8).contentType(MediaType.APPLICATION_JSON))
+				.andExpect(status().isOk())
+				.andExpect(content().contentType(MediaType.APPLICATION_JSON_UTF8))
+				.andExpect(content().json("{'id':1,'url':'http://localhost:80/games/1','status':{'1':'2','2':'0','3':'8','4':'8','5':'8','6':'0','7':'3','9':'9','9':'9','10':'8','11':'8','12':'8','13':'8','14':'1'}}"))
+	            .andReturn();
+		
+	
 	}
 }

@@ -51,7 +51,7 @@ class KalahController {
 	@Autowired
 	GameRepository gameRepository;
 
-	@GetMapping(consumes = { "application/json" }, path = { "games/{gameId}" })
+	@GetMapping(path = { "games/{gameId}" })
 	public HttpEntity<Object> readGame(HttpServletRequest request,
 			@PathVariable("gameId") @NonNull long gameId) throws URISyntaxException {
 		Optional<Game> theGame = gameRepository.findById(gameId);
@@ -122,7 +122,9 @@ class KalahController {
 		them and puts them in his/hers Kalah. The winner of the game is the player who has the most stones in his Kalah.
 */
 		while (pitStonesToDistribute>0){ // REQ 0) 
-			pit = ++pit % 14;
+			pit = (++pit % 15);
+			if (pit == 0 )
+				pit =1;
 			
 			if( isOpposingKalah(game,pit) )
 				continue; //REQ 1) 
@@ -175,14 +177,6 @@ class KalahController {
 				||(game.phase==GamePhase.NORTH_MOVES && pit==7);
 	}
 	
-	int getOpposingKalah(Game game){
-		if (game.phase==GamePhase.SOUTH_MOVES)
-			return 14;
-		if (game.phase==GamePhase.NORTH_MOVES)
-			return 7;
-		throw new KalahException("Invalid Kalah due to Game phase: "+game.phase);
-	}
-
 	int getOwnKalah(Game game){
 		if (game.phase==GamePhase.SOUTH_MOVES)
 			return 7;
@@ -197,13 +191,6 @@ class KalahController {
 				||(game.phase==GamePhase.NORTH_MOVES && pit==14);
 	}
 
-	boolean allowDropStoneInPit(GamePhase phase , int pit){
-		if(pit<1||pit>14)
-			throw new KalahException("Incorrect pit is out of bounds");
-		return (phase==GamePhase.SOUTH_MOVES && pit!=14)
-			|| (phase==GamePhase.NORTH_MOVES && pit!=7);	
-	}
-	
 	int oppositePit(int pit){
 		if(pit==7||pit==14)
 			throw new KalahException("pit is a kalah/pits 7 or 14 are not allowed");
@@ -211,7 +198,9 @@ class KalahController {
 	}
 
 	private HttpEntity<Object> httpResponse(Object result, HttpStatus httpStatus) {
-		return new ResponseEntity<Object>(result, HttpStatus.OK);
+		HttpEntity<Object> ret = new ResponseEntity<Object>(result, httpStatus);
+		System.out.println(ret);
+		return ret;
 	}
 
 	private Map<String, Object> prepareResult(HttpServletRequest request, Game game) throws URISyntaxException {
