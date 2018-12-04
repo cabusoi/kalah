@@ -7,6 +7,10 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 import java.util.List;
 
@@ -14,23 +18,29 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
 import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.web.servlet.MockMvc;
 
 @RunWith(SpringRunner.class)
-@SpringBootTest
-@Configuration
+//@SpringBootTest
+//(
+//			webEnvironment=SpringBootTest.WebEnvironment.MOCK,
+//			classes = KalahApplication.class)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.MOCK)
+@AutoConfigureMockMvc
 public class KalahApplicationTests {
 
-	@Bean
 	public GameStatusConverter converter(){
 		return new GameStatusConverter();
 	}
 	
 	@Autowired
 	KalahController gameController;
+	
+	@Autowired
+	private MockMvc mvc;
 	
 	@Before
 	public void contextLoads() {
@@ -155,5 +165,19 @@ public class KalahApplicationTests {
 			fail();
 		} catch (Exception e) {
 		}
+	}
+
+
+	@Test
+	public void testMoveAndPassControl() throws Exception {
+
+		//test POST to inexistent game expect 2
+		this.mvc.perform(post("/games")).andExpect(status().is(200))
+				.andExpect(content().string("{\"id\":1,\"url\":\"http://localhost:8081/games/1\"}"));
+		
+		//test PUT to inexistent game expect 404
+		this.mvc.perform(put("/games")).andExpect(status().is(404));
+		
+		
 	}
 }

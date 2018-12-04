@@ -34,6 +34,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
 @SpringBootApplication
@@ -93,20 +94,19 @@ class KalahController {
 		return httpResponse(result, HttpStatus.OK);
 	}
 
-	//returns true if next move will be done by the other player
 	void moveAndPassTurn(Game game, int pit) {
 		if(pit<1||pit>14)
-			throw new RuntimeException("Incorrect pit is out of bounds");
+			throw new KalahException("Incorrect pit is out of bounds");
 		if(pit==7||pit==14)
-			throw new RuntimeException("pit is a kalah/pits 7 or 14 are not allowed");
+			throw new KalahException("pit is a kalah/pits 7 or 14 are not allowed");
 		if (game.phase==GamePhase.SOUTH_MOVES && !(1<=pit&&pit<=6))
-			throw new RuntimeException("Incorrect pit given for first player moving");
+			throw new KalahException("Incorrect pit given for first player moving");
 		if (game.phase==GamePhase.NORTH_MOVES && !(8<=pit&&pit<=13))
-			throw new RuntimeException("Incorrect pit given for second player moving");
+			throw new KalahException("Incorrect pit given for second player moving");
 
 		int pitStonesToDistribute=getPitCount(game, pit);
 		if(!(pitStonesToDistribute>0))
-			throw new RuntimeException("Invalid number or pieces "+pitStonesToDistribute+" in pit "+pit);
+			throw new KalahException("Invalid number of pieces "+pitStonesToDistribute+" in pit "+pit);
 		setPitCount(game, pit, 0);
 /*
 		REQ 0) The player who begins picks up all the stones in any of their own pits, and sows the stones on to the right, one in
@@ -180,7 +180,7 @@ class KalahController {
 			return 14;
 		if (game.phase==GamePhase.NORTH_MOVES)
 			return 7;
-		throw new RuntimeException("Invalid Kalah due to Game phase: "+game.phase);
+		throw new KalahException("Invalid Kalah due to Game phase: "+game.phase);
 	}
 
 	int getOwnKalah(Game game){
@@ -188,7 +188,7 @@ class KalahController {
 			return 7;
 		if (game.phase==GamePhase.NORTH_MOVES)
 			return 14;
-		throw new RuntimeException("Invalid Kalah due to Game phase: "+game.phase);
+		throw new KalahException("Invalid Kalah due to Game phase: "+game.phase);
 	}
 
 	
@@ -199,14 +199,14 @@ class KalahController {
 
 	boolean allowDropStoneInPit(GamePhase phase , int pit){
 		if(pit<1||pit>14)
-			throw new RuntimeException("Incorrect pit is out of bounds");
+			throw new KalahException("Incorrect pit is out of bounds");
 		return (phase==GamePhase.SOUTH_MOVES && pit!=14)
 			|| (phase==GamePhase.NORTH_MOVES && pit!=7);	
 	}
 	
 	int oppositePit(int pit){
 		if(pit==7||pit==14)
-			throw new RuntimeException("pit is a kalah/pits 7 or 14 are not allowed");
+			throw new KalahException("pit is a kalah/pits 7 or 14 are not allowed");
 		return 14-pit%14;
 	}
 
@@ -297,7 +297,14 @@ class GameStatusConverter implements AttributeConverter<List<Integer>, String> {
 	public List<Integer> convertToEntityAttribute(String status) {
 		List<Integer> result = new ArrayList<>();
 		Arrays.asList(status.split(",")).stream().forEach(s -> result.add(Integer.valueOf(s)));
-		;
 		return result;
 	}
+}
+
+@ResponseStatus(value = HttpStatus.NOT_ACCEPTABLE)
+class KalahException extends RuntimeException {
+	private static final long serialVersionUID = 8884849074916410087L;
+    public KalahException(String message) {
+        super(message);
+    }
 }
