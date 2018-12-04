@@ -222,6 +222,21 @@ public class KalahApplicationTests {
 				.andExpect(content().json("{'id':1,'url':'http://localhost:80/games/1','status':{'1':'2','2':'0','3':'8','4':'8','5':'8','6':'0','7':'3','9':'9','9':'9','10':'8','11':'8','12':'8','13':'8','14':'1'}}"))
 	            .andReturn();
 		
+		//do some random moves
+		for (int i=0;i<500;i++){
+			try {
+				 this.mvc.perform( put("/games/1/pits/"+i%15).accept(MediaType.APPLICATION_JSON_UTF8).contentType(MediaType.APPLICATION_JSON));
+			} catch (Exception e) {
+				e.printStackTrace();
+			}
+		}
 	
+		//test GET game 1 expect 200  
+		System.out.println("\n"+"get /games/1");
+		result = this.mvc.perform( get("/games/1").accept(MediaType.APPLICATION_JSON_UTF8).contentType(MediaType.APPLICATION_JSON))
+				.andExpect(status().isOk())
+				.andReturn();
+		
+		System.out.println(result);
 	}
 }
